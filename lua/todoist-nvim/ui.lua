@@ -116,7 +116,10 @@ local function create_buffer_lines()
 end
 
 local function create_task_win()
-  local bufnr, win_id = win_float_helpers.centered({percentage = 0.8, winblend = 0})
+  local ret = win_float_helpers.centered({percentage = 0.8, winblend = 0})
+  local bufnr = ret.buf
+  local win_id = ret.win
+
   ui.current_state.win_id = win_id
   ui.current_state.bufnr = bufnr
   local contents = create_buffer_lines()
@@ -250,6 +253,7 @@ end
 function ui.render(daily_tasks_only, project_name)
   ui.current_state.daily_tasks_only = daily_tasks_only
   ui.current_state.project_name = project_name
+
   if helpers.is_current_win(ui.current_state.win_id) and ui.current_state.projects and ui.current_state.tasks then
     ui.update_buffer()
   else
