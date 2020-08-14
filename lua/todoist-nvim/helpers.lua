@@ -2,6 +2,11 @@ package.loaded['todoist-nvim.helpers'] = nil
 local vim = vim
 local helpers = {}
 
+function helpers.getline(bufnr, lnum, strict_indexing)
+  local strict_indexing = strict_indexing or true
+  return vim.api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, strict_indexing)[1]
+end
+
 function helpers.process_tasks(tasks)
   local tasks_by_id = {}
   for _, t in ipairs(tasks) do

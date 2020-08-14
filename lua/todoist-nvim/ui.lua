@@ -111,15 +111,6 @@ local function create_buffer_lines()
         end
       end
     end
-
-    -- TODO(smolck): Subtasks? Maybe?
-    -- Show 'Completed' section if there are completed tasks.
-    -- if state.completed_tasks and #state.completed_tasks > 0 then
-    --   table.insert(contents, centerish_string('Completed'))
-    --   for _, t in pairs(state.completed_tasks) do
-    --     table.insert(contents, render_task(t))
-    --   end
-    -- end
   end
   return contents
 end
@@ -136,21 +127,18 @@ local function create_task_win()
   api.nvim_set_current_win(win_id)
 end
 
-function ui.move_cursor_up()
+function ui.move_cursor(up)
   assert_in_todoist()
-  local curr_pos = api.nvim_win_get_cursor(0)
-  -- Don't move up if at the top of the list.
-  if curr_pos[1] ~= 2 then
-    api.nvim_win_set_cursor(0, {curr_pos[1] - 1, curr_pos[2]})
-  end
-end
+  local win_id = ui.current_state.win_id
+  local curr_pos = api.nvim_win_get_cursor(win_id)
+  local next_row = up and curr_pos[1] - 1 or curr_pos[1] + 1
+  local next_line = helpers.getline(ui.current_state.bufnr, next_row)
 
-function ui.move_cursor_down()
-  assert_in_todoist()
-  local curr_pos = api.nvim_win_get_cursor(0)
-  local next_line = api.nvim_buf_get_lines(0, curr_pos[1], curr_pos[1] + 1, false)[1]
+  local start = string.find(next_line, ({vim.pesc(ui.current_state.task_start)})[1])
+  start = start or string.find(next_line, ({vim.pesc(ui.current_state.checked_task_start)})[1])
+
   if next_line then
-    api.nvim_win_set_cursor(0, {curr_pos[1] + 1, curr_pos[2]})
+    api.nvim_win_set_cursor(win_id, {next_row, start})
   end
 end
 
@@ -223,8 +211,8 @@ end
 function ui.check_or_uncheck_task()
   assert_in_todoist()
   local state = ui.current_state
-  local row = api.nvim_win_get_cursor(0)[1]
-  local current_line = api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+  local current_line = api.nvim_get_current_line()
+
   if current_line:find(state.checked_task_start_pat) then
     uncheck_task(current_line)
   else
