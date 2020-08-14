@@ -1,4 +1,4 @@
-package.loaded['todoist-nvim.api'] = nil
+package.loaded['nvim-todoist'] = nil
 
 local vim = vim
 local rapidjson = require('rapidjson')

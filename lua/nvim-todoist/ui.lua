@@ -1,9 +1,9 @@
-package.loaded['todoist-nvim.ui'] = nil
+package.loaded['nvim-todoist.ui'] = nil
 local vim = vim
 local api = vim.api
-local todoist_api = require('todoist-nvim.api')
+local todoist_api = require('nvim-todoist.api')
 local win_float_helpers = require('plenary.window.float')
-local helpers = require('todoist-nvim.helpers')
+local helpers = require('nvim-todoist.helpers')
 local ui = {}
 ui.current_state =
   {
@@ -148,11 +148,13 @@ end
 
 function ui.update_buffer()
   local win_id = ui.current_state.win_id
+  local bufnr = ui.current_state.bufnr
+
   local cursor_pos = api.nvim_win_get_cursor(win_id)
   local lines = create_buffer_lines()
-  api.nvim_buf_set_option(0, 'modifiable', true)
-  api.nvim_buf_set_lines(0, 0, -1, false, lines)
-  api.nvim_buf_set_option(0, 'modifiable', false)
+  api.nvim_buf_set_option(bufnr, 'modifiable', true)
+  api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  api.nvim_buf_set_option(bufnr, 'modifiable', false)
   if cursor_pos[1] > #lines then
     api.nvim_win_set_cursor(win_id, {#lines, cursor_pos[2]})
   end

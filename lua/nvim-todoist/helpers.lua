@@ -1,4 +1,4 @@
-package.loaded['todoist-nvim.helpers'] = nil
+package.loaded['nvim-todoist.helpers'] = nil
 local vim = vim
 local helpers = {}
 
