@@ -134,11 +134,12 @@ function ui.move_cursor(up)
   local next_row = up and curr_pos[1] - 1 or curr_pos[1] + 1
   local next_line = helpers.getline(ui.current_state.bufnr, next_row)
 
-  local start = string.find(next_line, ({vim.pesc(ui.current_state.task_start)})[1])
-  start = start or string.find(next_line, ({vim.pesc(ui.current_state.checked_task_start)})[1])
-
   if next_line then
-    api.nvim_win_set_cursor(win_id, {next_row, start})
+    local start = string.find(next_line, ({vim.pesc(ui.current_state.task_start)})[1])
+    start = start or string.find(next_line, ({vim.pesc(ui.current_state.checked_task_start)})[1])
+    if start then
+      api.nvim_win_set_cursor(win_id, {next_row, start})
+    end
   end
 end
 
@@ -181,6 +182,10 @@ local function uncheck_task(current_line)
 
   todoist_api.reopen_task(state.api_key, task.id)
   task.completed = false
+
+  ui.current_state.completed_tasks = vim.tbl_filter(function(x)
+    return x.id == task.id
+  end, state.completed_tasks)
 end
 
 local function check_task(current_line)
@@ -199,8 +204,10 @@ local function check_task(current_line)
       end,
       state.tasks
     )[1]
+
   todoist_api.close_task(state.api_key, task.id)
   task.completed = true
+
   if ui.current_state.completed_tasks then
     table.insert(ui.current_state.completed_tasks, task)
   else
@@ -243,22 +250,26 @@ end
 function ui.render(daily_tasks_only, project_name)
   ui.current_state.daily_tasks_only = daily_tasks_only
   ui.current_state.project_name = project_name
-  if not ui.current_state.tasks and not ui.current_state.projects then
-    todoist_api.fetch_active_tasks(
-      ui.current_state.api_key,
-      function(tasks)
-        todoist_api.fetch_projects(
-          ui.current_state.api_key,
-          function(projects)
-            ui.current_state =
-              vim.tbl_extend("error", ui.current_state, {tasks = tasks, projects = projects})
-            create_task_win()
-          end
-        )
-      end
-    )
+  if api.nvim_win_is_valid(ui.current_state.win_id) and ui.current_state.projects and ui.current_state.tasks then
+    ui.update_buffer()
   else
-    create_task_win()
+    if not ui.current_state.tasks and not ui.current_state.projects then
+      todoist_api.fetch_active_tasks(
+        ui.current_state.api_key,
+        function(tasks)
+          todoist_api.fetch_projects(
+            ui.current_state.api_key,
+            function(projects)
+              ui.current_state =
+                vim.tbl_extend("error", ui.current_state, {tasks = tasks, projects = projects})
+              create_task_win()
+            end
+          )
+        end
+      )
+    else
+      create_task_win()
+    end
   end
 end
 

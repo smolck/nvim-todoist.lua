@@ -4,7 +4,12 @@ local helpers = {}
 
 function helpers.getline(bufnr, lnum, strict_indexing)
   local strict_indexing = strict_indexing or true
-  return vim.api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, strict_indexing)[1]
+  local worked, res = pcall(vim.api.nvim_buf_get_lines, bufnr, lnum - 1, lnum, strict_indexing)
+  if worked then
+    return res[1]
+  else
+    return nil
+  end
 end
 
 function helpers.process_tasks(tasks)
