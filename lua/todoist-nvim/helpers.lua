@@ -2,6 +2,10 @@ package.loaded['todoist-nvim.helpers'] = nil
 local vim = vim
 local helpers = {}
 
+function helpers.is_current_win(win_id)
+  return vim.api.nvim_get_current_win() == win_id
+end
+
 function helpers.getline(bufnr, lnum, strict_indexing)
   local strict_indexing = strict_indexing or true
   local worked, res = pcall(vim.api.nvim_buf_get_lines, bufnr, lnum - 1, lnum, strict_indexing)

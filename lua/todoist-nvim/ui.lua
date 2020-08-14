@@ -250,7 +250,7 @@ end
 function ui.render(daily_tasks_only, project_name)
   ui.current_state.daily_tasks_only = daily_tasks_only
   ui.current_state.project_name = project_name
-  if api.nvim_win_is_valid(ui.current_state.win_id) and ui.current_state.projects and ui.current_state.tasks then
+  if helpers.is_current_win(ui.current_state.win_id) and ui.current_state.projects and ui.current_state.tasks then
     ui.update_buffer()
   else
     if not ui.current_state.tasks and not ui.current_state.projects then
