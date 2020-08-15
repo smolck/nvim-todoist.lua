@@ -12,6 +12,7 @@ ui.current_state =
     checked_task_start_pat = '(%s*)%[x%]%s',
     task_start = '[ ] ',
     task_start_pat = '(%s*)%[%s%]%s',
+    initialized = false
   }
 
 local function assert_in_todoist()
@@ -252,30 +253,35 @@ function ui.refresh()
     )
 end
 
-function ui.render(daily_tasks_only, project_name)
-  ui.current_state.daily_tasks_only = daily_tasks_only
-  ui.current_state.project_name = project_name
-
-  if helpers.is_current_win(ui.current_state.win_id) and ui.current_state.projects and ui.current_state.tasks then
-    ui.update_buffer()
-  else
-    if not ui.current_state.tasks and not ui.current_state.projects then
-      todoist_api.fetch_active_tasks(
+function ui.init()
+  todoist_api.fetch_active_tasks(
+    ui.current_state.api_key,
+    function(tasks)
+      todoist_api.fetch_projects(
         ui.current_state.api_key,
-        function(tasks)
-          todoist_api.fetch_projects(
-            ui.current_state.api_key,
-            function(projects)
-              ui.current_state =
-                vim.tbl_extend("error", ui.current_state, {tasks = tasks, projects = projects})
-              create_task_win()
-            end
-          )
+        function(projects)
+          ui.current_state =
+            vim.tbl_extend("error", ui.current_state, {tasks = tasks, projects = projects})
+          ui.current_state.initialized = true
         end
       )
+    end
+  )
+end
+
+function ui.render(daily_tasks_only, project_name)
+  if ui.current_state.initialized then
+    ui.current_state.daily_tasks_only = daily_tasks_only
+    ui.current_state.project_name = project_name
+
+    if helpers.is_current_win(ui.current_state.win_id) then
+     ui.update_buffer()
     else
       create_task_win()
-    end
+   end
+  else
+    -- TODO(smolck)
+    error('UI hasn\'t been initialized. Call require\'nvim-todoist.ui\'.init()')
   end
 end
 
