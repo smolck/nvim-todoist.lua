@@ -2,6 +2,11 @@ package.loaded['nvim-todoist.helpers'] = nil
 local vim = vim
 local helpers = {}
 
+function helpers.first(...)
+  local x = select(1, ...)
+  return x
+end
+
 function helpers.is_current_win(win_id)
   return vim.api.nvim_get_current_win() == win_id
 end
@@ -14,6 +19,21 @@ function helpers.getline(bufnr, lnum, strict_indexing)
   else
     return nil
   end
+end
+
+function helpers.flatten_with_children(tbl)
+  local ret = {}
+
+  for _, v in pairs(tbl) do
+    table.insert(ret, v)
+    if v.children then
+      for _, v2 in pairs(helpers.flatten_with_children(v.children)) do
+        table.insert(ret, v2)
+      end
+    end
+  end
+
+  return ret
 end
 
 function helpers.process_tasks(tasks)

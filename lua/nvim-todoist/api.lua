@@ -29,8 +29,7 @@ function api.fetch_projects(api_key, cb)
       stdout_buffered = true,
       on_stdout =
         function(_, d, _)
-          local json = rapidjson.decode(table.concat(d))
-          cb(json)
+          cb(rapidjson.decode(table.concat(d)))
         end,
     }
   )
@@ -64,6 +63,44 @@ function api.reopen_task(api_key, task_id)
       base_uri .. '/tasks/' .. tostring(task_id) .. '/reopen',
       auth_str(api_key)
     )
+  )
+end
+
+function api.create_task(api_key, data, cb)
+  vim.fn.jobstart(
+    string.format(
+      'curl -X POST "%s" --data \'%s\' -H %s -H "Content-Type: application/json"',
+      base_uri .. '/tasks',
+      rapidjson.encode(data),
+      auth_str(api_key)
+    ),
+    cb and
+    {
+      stdout_buffered = true,
+      on_stdout =
+        function(_, d, _)
+          cb(rapidjson.decode(table.concat(d)))
+        end,
+    } or
+    nil
+  )
+end
+
+function api.delete_task(api_key, task_id, cb)
+  vim.fn.jobstart(
+    string.format(
+      'curl -X DELETE "%s" -H %s',
+      base_uri .. '/tasks/' .. tostring(task_id),
+      auth_str(api_key)
+    ),
+    cb and
+    {
+      stdout_buffered = true,
+      on_stdout = function(_, d, _)
+        cb(rapidjson.decode(table.concat(d)))
+      end,
+    } or
+    nil
   )
 end
 
