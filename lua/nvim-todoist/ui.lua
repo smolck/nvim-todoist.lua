@@ -6,7 +6,7 @@ local win_float_helpers = require('plenary.window.float')
 local helpers = require('nvim-todoist.helpers')
 local first = helpers.first
 local ui = {}
-ui.current_state =
+ui.state =
   {
     api_key = os.getenv('TODOIST_API_KEY'),
     checked_task_start = '[x] ',
@@ -14,7 +14,8 @@ ui.current_state =
     task_start = '[ ] ',
     task_start_pat = '(%s*)%[%s%]%s',
     initialized = false,
-    lines = {}
+    -- TODO(smolck): Better name
+    tasks_index = {}
   }
 
 local function assert_in_todoist()
@@ -23,16 +24,15 @@ end
 
 local function render_task(task, padding)
   local padding = padding or ''
-  local state = ui.current_state
   local task_ending = ''
   if task.due and task.due.date then
     task_ending = ' (' .. task.due.date .. ')'
   end
   local rendered
   if task.completed then
-    rendered = padding .. state.checked_task_start .. task.content .. task_ending
+    rendered = padding .. ui.state.checked_task_start .. task.content .. task_ending
   else
-    rendered = padding .. state.task_start .. task.content .. task_ending
+    rendered = padding .. ui.state.task_start .. task.content .. task_ending
   end
   if task.children then
     local lines = {}
@@ -57,18 +57,17 @@ local function is_recurring_task(task)
 end
 
 local function centerish_string(str)
-  local w = api.nvim_win_get_width(ui.current_state.win_id)
+  local w = api.nvim_win_get_width(ui.state.win_id)
   return string.rep(' ', w / 2 - 10) .. str
 end
 
 local function create_buffer_lines()
-  ui.current_state.lines = {}
+  ui.state.tasks_index = {}
 
-  local daily_tasks_only = ui.current_state.daily_tasks_only or false
-  local project_name = ui.current_state.project_name or 'Inbox'
-  local state = ui.current_state
-  local tasks = state.tasks
-  local projects = state.projects
+  local daily_tasks_only = ui.state.daily_tasks_only or false
+  local project_name = ui.state.project_name or 'Inbox'
+  local tasks = ui.state.tasks
+  local projects = ui.state.projects
   local tree = {}
   for _, proj in ipairs(projects) do
     local filtered =
@@ -85,7 +84,7 @@ local function create_buffer_lines()
     table.insert(contents, centerish_string('Daily'))
     local processed = helpers.process_tasks(vim.tbl_filter(is_recurring_task, tasks))
     for _, t in pairs(processed) do
-      ui.current_state.lines[#contents] = t
+      ui.state.tasks_index[#contents] = t
 
       local rendered = render_task(t)
       if type(rendered) == 'string' then
@@ -100,7 +99,7 @@ local function create_buffer_lines()
     table.insert(contents, centerish_string(project_name))
     local processed = helpers.process_tasks(tree[project_name])
     for _, t in pairs(processed) do
-      ui.current_state.lines[#contents] = t
+      ui.state.tasks_index[#contents] = t
 
       local rendered = render_task(t)
       if type(rendered) == 'string' then
@@ -112,7 +111,7 @@ local function create_buffer_lines()
       end
     end
   end
-  ui.current_state.lines = helpers.flatten_with_children(ui.current_state.lines)
+  ui.state.tasks_index = helpers.flatten_with_children(ui.state.tasks_index)
 
   return contents
 end
@@ -121,8 +120,8 @@ local function create_task_win()
   local ret = win_float_helpers.centered({percentage = 0.8, winblend = 0})
   local bufnr = ret.buf
   local win_id = ret.win
-  ui.current_state.win_id = win_id
-  ui.current_state.bufnr = bufnr
+  ui.state.win_id = win_id
+  ui.state.bufnr = bufnr
   local contents = create_buffer_lines()
   api.nvim_buf_set_lines(bufnr, 0, -1, false, contents)
   api.nvim_win_set_cursor(win_id, {2, 1})
@@ -133,14 +132,14 @@ end
 
 function ui.move_cursor(up)
   assert_in_todoist()
-  local win_id = ui.current_state.win_id
+  local win_id = ui.state.win_id
   local curr_pos = api.nvim_win_get_cursor(win_id)
   local next_row = up and curr_pos[1] - 1 or curr_pos[1] + 1
-  local next_line = helpers.getline(ui.current_state.bufnr, next_row)
+  local next_line = helpers.getline(ui.state.bufnr, next_row)
   if next_line then
-    local start = string.find(next_line, ({vim.pesc(ui.current_state.task_start)})[1])
+    local start = string.find(next_line, first(vim.pesc(ui.state.task_start)))
     start =
-      start or string.find(next_line, ({vim.pesc(ui.current_state.checked_task_start)})[1])
+      start or string.find(next_line, first(vim.pesc(ui.state.checked_task_start)))
     if start then
       api.nvim_win_set_cursor(win_id, {next_row, start})
     end
@@ -148,8 +147,8 @@ function ui.move_cursor(up)
 end
 
 function ui.update_buffer()
-  local win_id = ui.current_state.win_id
-  local bufnr = ui.current_state.bufnr
+  local win_id = ui.state.win_id
+  local bufnr = ui.state.bufnr
   local cursor_pos = api.nvim_win_get_cursor(win_id)
   local lines = create_buffer_lines()
   api.nvim_buf_set_option(bufnr, 'modifiable', true)
@@ -161,50 +160,46 @@ function ui.update_buffer()
 end
 
 local function change_line_to(new_line)
-  local bufnr = ui.current_state.bufnr
-  local row = api.nvim_win_get_cursor(ui.current_state.win_id)[1]
+  local bufnr = ui.state.bufnr
+  local row = api.nvim_win_get_cursor(ui.state.win_id)[1]
   api.nvim_buf_set_option(bufnr, 'modifiable', true)
   api.nvim_buf_set_lines(bufnr, row - 1, row, false, {new_line})
   api.nvim_buf_set_option(bufnr, 'modifiable', false)
 end
 
 local function uncheck_task(current_line)
-  local state = ui.current_state
-  local new_line, _ = current_line:gsub(state.checked_task_start_pat, state.task_start)
+  local new_line, _ = current_line:gsub(ui.state.checked_task_start_pat, ui.state.task_start)
   change_line_to(new_line)
+  local task = ui.state.tasks_index[api.nvim_win_get_cursor(ui.state.win_id)[1] - 1]
 
-  local task = state.lines[api.nvim_win_get_cursor(state.win_id)[1] - 1]
-
-  todoist_api.reopen_task(state.api_key, task.id)
+  todoist_api.reopen_task(ui.state.api_key, task.id)
   task.completed = false
-  ui.current_state.completed_tasks =
+  ui.state.completed_tasks =
     vim.tbl_filter(
       function(x)
         return x.id == task.id
       end,
-      state.completed_tasks
+      ui.state.completed_tasks
     )
 end
 
 local function check_task(current_line)
-  local state = ui.current_state
-  local new_line, _ = current_line:gsub(state.task_start_pat, state.checked_task_start)
+  local new_line, _ = current_line:gsub(ui.state.task_start_pat, ui.state.checked_task_start)
   change_line_to(new_line)
-  local task = state.lines[api.nvim_win_get_cursor(state.win_id)[1] - 1]
-  todoist_api.close_task(state.api_key, task.id)
+  local task = ui.state.tasks_index[api.nvim_win_get_cursor(ui.state.win_id)[1] - 1]
+  todoist_api.close_task(ui.state.api_key, task.id)
   task.completed = true
-  if ui.current_state.completed_tasks then
-    table.insert(ui.current_state.completed_tasks, task)
+  if ui.state.completed_tasks then
+    table.insert(ui.state.completed_tasks, task)
   else
-    ui.current_state.completed_tasks = {task}
+    ui.state.completed_tasks = {task}
   end
 end
 
 function ui.check_or_uncheck_task()
   assert_in_todoist()
-  local state = ui.current_state
   local current_line = api.nvim_get_current_line()
-  if current_line:find(state.checked_task_start_pat) then
+  if current_line:find(ui.state.checked_task_start_pat) then
     uncheck_task(current_line)
   else
     check_task(current_line)
@@ -214,20 +209,20 @@ end
 
 function ui.delete_task()
   assert_in_todoist()
-  local task = ui.current_state.lines[api.nvim_win_get_cursor(ui.current_state.wion_id)[1] - 1]
-  todoist_api.delete_task(ui.current_state.api_key, task.id, function() ui.refresh() end)
+  local task = ui.state.tasks_index[api.nvim_win_get_cursor(ui.state.wion_id)[1] - 1]
+  todoist_api.delete_task(ui.state.api_key, task.id, function() ui.refresh() end)
 end
 
 function ui.refresh()
   assert_in_todoist()
   todoist_api.fetch_active_tasks(
-    ui.current_state.api_key,
+    ui.state.api_key,
     function(tasks)
       todoist_api.fetch_projects(
-        ui.current_state.api_key,
+        ui.state.api_key,
         function(projects)
-          ui.current_state =
-            vim.tbl_extend("force", ui.current_state, {tasks = tasks, projects = projects})
+          ui.state =
+            vim.tbl_extend("force", ui.state, {tasks = tasks, projects = projects})
           ui.update_buffer()
         end
       )
@@ -237,14 +232,15 @@ end
 
 function ui.init()
   todoist_api.fetch_active_tasks(
-    ui.current_state.api_key,
+    ui.state.api_key,
     function(tasks)
       todoist_api.fetch_projects(
-        ui.current_state.api_key,
+        ui.state.api_key,
         function(projects)
-          ui.current_state =
-            vim.tbl_extend("error", ui.current_state, {tasks = tasks, projects = projects})
-          ui.current_state.initialized = true
+          ui.state =
+            vim.tbl_extend("error", ui.state, {tasks = tasks, projects = projects})
+
+          ui.state.initialized = true
         end
       )
     end
@@ -252,10 +248,10 @@ function ui.init()
 end
 
 function ui.render(daily_tasks_only, project_name)
-  if ui.current_state.initialized then
-    ui.current_state.daily_tasks_only = daily_tasks_only
-    ui.current_state.project_name = project_name
-    if helpers.is_current_win(ui.current_state.win_id) then
+  if ui.state.initialized then
+    ui.state.daily_tasks_only = daily_tasks_only
+    ui.state.project_name = project_name
+    if helpers.is_current_win(ui.state.win_id) then
       ui.update_buffer()
     else
       create_task_win()
