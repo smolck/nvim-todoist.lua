@@ -118,8 +118,7 @@ end
 
 local function create_task_win()
   local ret = win_float_helpers.centered({percentage = 0.8, winblend = 0})
-  local bufnr = ret.buf
-  local win_id = ret.win
+  local bufnr, win_id = ret.bufnr, ret.win_id
   ui.state.win_id = win_id
   ui.state.bufnr = bufnr
   local contents = create_buffer_lines()
@@ -207,6 +206,23 @@ function ui.check_or_uncheck_task()
   ui.update_buffer()
 end
 
+function ui.create_task()
+  assert_in_todoist()
+  local content = vim.fn.input('Content: ')
+  assert(content ~= '', 'Content field required')
+
+  local due = vim.fn.input('Due: ')
+
+  todoist_api.create_task(ui.state.api_key, {
+    content = content,
+    due_string = due ~= "" and due or nil,
+    project_id = vim.tbl_filter(
+      function(x) return x.name == ui.state.project_name end,
+      ui.state.projects
+    )[1].id
+  }, ui.refresh)
+end
+
 function ui.delete_task()
   assert_in_todoist()
   local task = ui.state.tasks_index[api.nvim_win_get_cursor(ui.state.wion_id)[1] - 1]
@@ -250,7 +266,7 @@ end
 function ui.render(daily_tasks_only, project_name)
   if ui.state.initialized then
     ui.state.daily_tasks_only = daily_tasks_only
-    ui.state.project_name = project_name
+    ui.state.project_name = project_name ~= "" and project_name or nil
     if helpers.is_current_win(ui.state.win_id) then
       ui.update_buffer()
     else
