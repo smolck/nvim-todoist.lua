@@ -1,6 +1,11 @@
 package.loaded['nvim-todoist.helpers'] = nil
 local vim = vim
+local api = vim.api
 local helpers = {}
+
+function helpers.assert_in_todoist()
+  assert(api.nvim_buf_get_option(0, 'filetype') == 'todoist', 'Not in Todoist buffer')
+end
 
 function helpers.first(...)
   local x = select(1, ...)
