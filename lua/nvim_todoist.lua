@@ -58,16 +58,19 @@ nvim_todoist.neovim_stuff = plugin.export {
         assert(initialized,
           [[ You didn't initialize nvim-todoist.lua! Call require'nvim_todoist.lua'.neovim_stuff.use_defaults() ]])
 
-        state.project_name = project_name ~= "" and project_name or 'Inbox'
-
-        if state.win_id then
-          if helpers.is_current_win(state.win_id) then
+        project_name = project_name ~= "" and project_name or 'Inbox'
+        if state.win_id and helpers.is_current_win(state.win_id) then
+          if state.project_name == project_name then
             print(
               'Todoist window is already open! Did you mean `:TodoistRefresh`?'
             )
             return
+          else
+            api.nvim_win_close(state.win_id, true)
           end
         end
+
+        state.project_name = project_name
 
         local res = ui.create_task_win(state.projects, state.tasks, state.project_name, nvim_todoist.user_opts)
         state.tasks_index = res.tasks_index
@@ -88,7 +91,7 @@ nvim_todoist.neovim_stuff = plugin.export {
         state.win_id,
         state.bufnr,
         nvim_todoist.user_opts,
-        false)
+        true)
     end;
     TodoistCreateTask = function()
       helpers.assert_in_todoist()
