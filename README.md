@@ -1,4 +1,4 @@
-# nvim-todoist.lua
+# nvim-todoist.lua - Todoist plugin for NeoVim inspired by [todoist.nvim](https://github.com/romgrk/todoist.nvim)
 
 ## Setup + Installation
 
