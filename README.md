@@ -2,6 +2,9 @@
 
 ## Setup + Installation
 
+### Requirements
+* [NeoVim 0.5.0 (nightly)](https://github.com/neovim/neovim/releases/tag/nightly)
+
 Use your plugin manager of choice, like [vim-plug](junegunn/vim-plug) or
 [packer.nvim](wbthomason/packer.nvim). Here's an example with vim-plug:
 
@@ -26,8 +29,10 @@ EOF
 
 If you don't do that, none of this plugin's functions, like `:Todoist`, will work!
 
-### Requirements
-* [NeoVim 0.5.0 (nightly)](https://github.com/neovim/neovim/releases/tag/nightly)
+### API Token
+
+First, get your Todoist API token from https://todoist.com/prefs/integrations. After that, set the `$TODOIST_API_KEY` environmental variable to
+that token.
 
 ## Usage
 
