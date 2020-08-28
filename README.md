@@ -9,15 +9,14 @@ Use your plugin manager of choice, like [vim-plug](junegunn/vim-plug) or
 [packer.nvim](wbthomason/packer.nvim). Here's an example with vim-plug:
 
 ```vim
-" Dependencies
+" Dependency
 Plug 'nvim-lua/plenary.nvim'
-Plug 'norcalli/neovim-plugin'
 
 Plug 'smolck/nvim-todoist.lua'
 ```
 
 Just make sure that no matter what package manager you use, you install
-[neovim-plugin](https://github.com/norcalli/neovim-plugin) and [nvim-lua](https://github.com/nvim-lua/plenary.nvim) along with this plugin, because this plugin depends on those.
+[plenary.nvim](https://github.com/nvim-lua/plenary.nvim) along with this plugin.
 
 After you've done that, make sure to add this to your `init.vim` (after the `Plug` lines):
 
