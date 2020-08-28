@@ -10,13 +10,15 @@ Use your plugin manager of choice, like [vim-plug](junegunn/vim-plug) or
 
 ```vim
 " Dependency
+Plug 'norcalli/neovim-plugin', {'commit': '41ee2803d4a1cf38b9448bbfb936bfff23caed47'}
 Plug 'nvim-lua/plenary.nvim'
 
 Plug 'smolck/nvim-todoist.lua'
 ```
 
-Just make sure that no matter what package manager you use, you install
-[plenary.nvim](https://github.com/nvim-lua/plenary.nvim) along with this plugin.
+Just make sure that no matter what package manager you use, 
+you install [neovim-plugin@41ee280](https://github.com/norcalli/neovim-plugin/commit/41ee2803d4a1cf38b9448bbfb936bfff23caed47) 
+and [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) along with this plugin.
 
 After you've done that, make sure to add this to your `init.vim` (after the `Plug` lines):
 

@@ -1,3 +1,0 @@
-[submodule "lua/nvim-todoist/neovim-plugin"]
-	path = lua/nvim-todoist/neovim-plugin
-	url = https://github.com/norcalli/neovim-plugin

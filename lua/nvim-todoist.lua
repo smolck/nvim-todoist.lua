@@ -1,4 +1,4 @@
-local plugin = require('nvim-todoist.neovim-plugin.lua.neovim-plugin')(vim)
+local plugin = require('neovim-plugin')(vim)
 local ui = require('nvim-todoist.ui')
 local helpers = require('nvim-todoist.helpers')
 local todoist_api = require('nvim-todoist.api')
