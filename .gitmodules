@@ -1,3 +1,7 @@
 [submodule "lua/nvim-todoist/neovim-plugin"]
 	path = lua/nvim-todoist/neovim-plugin
 	url = https://github.com/norcalli/neovim-plugin
+[submodule "lua/nvim-todoist/plenary"]
+	path = lua/nvim-todoist/plenary
+	url = https://github.com/smolck/plenary.nvim
+	branch = make-work-as-submodule
