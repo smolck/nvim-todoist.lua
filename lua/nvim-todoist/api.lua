@@ -1,6 +1,5 @@
-package.loaded['nvim-todoist'] = nil
 local vim = vim
-local rapidjson = require('rapidjson')
+local json = require('nvim-todoist.lib.json')
 local base_uri = 'https://api.todoist.com/rest/v1'
 local api = {}
 
@@ -15,7 +14,7 @@ function api.fetch_active_tasks(api_key, cb)
       stdout_buffered = true,
       on_stdout =
         function(_, d, _)
-          local json = rapidjson.decode(table.concat(d))
+          local json = json.decode(table.concat(d))
           cb(json)
         end,
     }
@@ -29,7 +28,7 @@ function api.fetch_projects(api_key, cb)
       stdout_buffered = true,
       on_stdout =
         function(_, d, _)
-          cb(rapidjson.decode(table.concat(d)))
+          cb(json.decode(table.concat(d)))
         end,
     }
   )
@@ -41,7 +40,7 @@ function api.update_task(api_key, task_id, data)
       'curl -X POST "%s" -H %s --data \'%s\'',
       base_uri .. '/tasks/' .. tostring(task_id),
       auth_str(api_key),
-      rapidjson.encode(data)
+      json.encode(data)
     )
   )
 end
@@ -71,7 +70,7 @@ function api.create_task(api_key, data, cb)
     string.format(
       'curl -X POST "%s" --data \'%s\' -H %s -H "Content-Type: application/json"',
       base_uri .. '/tasks',
-      rapidjson.encode(data),
+      json.encode(data),
       auth_str(api_key)
     ),
     cb and
@@ -79,7 +78,7 @@ function api.create_task(api_key, data, cb)
       stdout_buffered = true,
       on_stdout =
         function(_, d, _)
-          cb(rapidjson.decode(table.concat(d)))
+          cb(json.decode(table.concat(d)))
         end,
     } or
     nil
@@ -97,7 +96,7 @@ function api.delete_task(api_key, task_id, cb)
     {
       stdout_buffered = true,
       on_stdout = function(_, d, _)
-        cb(rapidjson.decode(table.concat(d)))
+        cb(json.decode(table.concat(d)))
       end,
     } or
     nil
