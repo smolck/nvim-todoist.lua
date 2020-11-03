@@ -1,3 +1,5 @@
+> NOTE: This was more of an idea I put into code because todoist.nvim wasn't working for me. But, I don't really plan to maintain it, and it's not really all that usable anyways, so if you're looking for a Todoist plugin, just use https://github.com/romgrk/todoist.nvim instead.
+
 # nvim-todoist.lua - Todoist plugin for Neovim
 
 ## Setup + Installation
