@@ -23,7 +23,7 @@ you install [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) along with 
 After you've done that, make sure to add this to your `init.vim` (after the `Plug` lines):
 
 ```vim
-lua EOF <<
+lua << EOF
 require'nvim-todoist'.neovim_stuff.use_defaults()
 EOF
 ```
